@@ -750,23 +750,6 @@ export function AudioEditor() {
 
   return (
     <main className={styles.shell}>
-      <section className={styles.masthead}>
-        <div className={styles.brandBlock}>
-          <p className={styles.eyebrow}>BROWSER CUT ROOM</p>
-          <h1 className={styles.title}>MUEdit</h1>
-          <p className={styles.summary}>
-            불러오기, 컷, 트림, 페이드, 무음 추가, 고음질 내보내기에 바로
-            집중할 수 있게 화면을 정리한 편집기입니다.
-          </p>
-          <div className={styles.focusStrip}>
-            <span>클립 이동</span>
-            <span>정밀 줌</span>
-            <span>클립별 볼륨</span>
-            <span>WAV Export</span>
-          </div>
-        </div>
-      </section>
-
       <section className={styles.workspace}>
         <aside className={styles.sidebar}>
           <div className={styles.card}>
