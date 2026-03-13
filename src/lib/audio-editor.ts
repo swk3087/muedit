@@ -80,6 +80,10 @@ export function formatTime(seconds: number) {
 }
 
 export function getSnapStep(zoom: number) {
+  if (zoom >= 360) {
+    return 0.02;
+  }
+
   if (zoom >= 220) {
     return 0.05;
   }
@@ -88,7 +92,49 @@ export function getSnapStep(zoom: number) {
     return 0.1;
   }
 
-  return 0.25;
+  if (zoom >= 72) {
+    return 0.25;
+  }
+
+  return 0.5;
+}
+
+export function clampZoom(zoom: number) {
+  return clamp(zoom, 24, 420);
+}
+
+export function formatZoom(zoom: number) {
+  return `${zoom.toFixed(1)} px/s`;
+}
+
+export function formatClipGain(gain: number) {
+  return `${Math.round(gain * 100)}%`;
+}
+
+export function formatShortSeconds(seconds: number) {
+  if (seconds >= 10) {
+    return `${seconds.toFixed(1)}s`;
+  }
+
+  return `${seconds.toFixed(2)}s`;
+}
+
+export function getClipBadges(clip: Clip) {
+  const badges = [`VOL ${formatClipGain(clip.gain)}`];
+
+  if (clip.kind === "silence") {
+    badges.unshift("SILENT");
+  }
+
+  if (clip.fadeIn > 0.009) {
+    badges.push(`IN ${formatShortSeconds(clip.fadeIn)}`);
+  }
+
+  if (clip.fadeOut > 0.009) {
+    badges.push(`OUT ${formatShortSeconds(clip.fadeOut)}`);
+  }
+
+  return badges;
 }
 
 export function snapTime(value: number, zoom: number, enabled: boolean) {
@@ -336,6 +382,10 @@ export function computePeaks(buffer: AudioBuffer, resolution = 1400) {
 }
 
 export function getRulerStep(zoom: number) {
+  if (zoom >= 380) {
+    return 0.1;
+  }
+
   if (zoom >= 260) {
     return 0.25;
   }

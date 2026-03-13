@@ -13,11 +13,15 @@ import { WaveformPreview } from "./waveform-preview";
 import {
   assignClipLanes,
   audioBufferToWav,
+  clampZoom,
   createAudioSource,
   createClipFromSource,
   createSilenceClip,
   duplicateClip,
+  formatClipGain,
   formatTime,
+  formatZoom,
+  getClipBadges,
   getProjectDuration,
   getRulerStep,
   getSnapStep,
@@ -104,7 +108,8 @@ export function AudioEditor() {
   const orderedClips = [...clips].sort(
     (left, right) => left.startTime - right.startTime || left.duration - right.duration,
   );
-  const arrangementDuration = Math.max(18, getProjectDuration(clips) + 4, playhead + 4);
+  const projectDuration = getProjectDuration(clips);
+  const arrangementDuration = Math.max(18, projectDuration + 4, playhead + 4);
   const rulerStep = getRulerStep(zoom);
   const timelineWidth = Math.max(arrangementDuration * zoom, 1080);
   const rulerMarks = Array.from(
@@ -119,6 +124,14 @@ export function AudioEditor() {
 
     const step = getSnapStep(zoom);
     return Math.round(value / step) * step;
+  }
+
+  function setZoomValue(nextZoom: number) {
+    setZoom(clampZoom(nextZoom));
+  }
+
+  function nudgeZoom(delta: number) {
+    setZoom((current) => clampZoom(current + delta));
   }
 
   function ensureAudioContext() {
@@ -212,6 +225,7 @@ export function AudioEditor() {
     const importedClips: Clip[] = [];
     const failedFiles: string[] = [];
     let cursor = Math.max(playhead, getProjectDuration(clips));
+    
 
     for (const file of Array.from(fileList)) {
       try {
@@ -741,29 +755,15 @@ export function AudioEditor() {
           <p className={styles.eyebrow}>BROWSER CUT ROOM</p>
           <h1 className={styles.title}>MUEdit</h1>
           <p className={styles.summary}>
-            가져온 오디오를 클립 단위로 자르고, 무음 공간을 만들고, 페이드와
-            볼륨을 각 조각마다 따로 만지는 웹 편집기입니다. 마지막은 무손실 WAV로
-            바로 내보냅니다.
+            불러오기, 컷, 트림, 페이드, 무음 추가, 고음질 내보내기에 바로
+            집중할 수 있게 화면을 정리한 편집기입니다.
           </p>
-        </div>
-
-        <div className={styles.statsRow}>
-          <article className={styles.statCard}>
-            <span>Timeline</span>
-            <strong>{formatTime(getProjectDuration(clips))}</strong>
-          </article>
-          <article className={styles.statCard}>
-            <span>Sources</span>
-            <strong>{sources.length}</strong>
-          </article>
-          <article className={styles.statCard}>
-            <span>Clips</span>
-            <strong>{clips.length}</strong>
-          </article>
-          <article className={styles.statCard}>
-            <span>Export</span>
-            <strong>32-bit float WAV</strong>
-          </article>
+          <div className={styles.focusStrip}>
+            <span>클립 이동</span>
+            <span>정밀 줌</span>
+            <span>클립별 볼륨</span>
+            <span>WAV Export</span>
+          </div>
         </div>
       </section>
 
@@ -907,7 +907,7 @@ export function AudioEditor() {
                 )}
 
                 <label className={styles.field}>
-                  <span>볼륨 {Math.round(selectedClip.gain * 100)}%</span>
+                  <span>볼륨 {formatClipGain(selectedClip.gain)}</span>
                   <input
                     max={2.5}
                     min={0}
@@ -1045,7 +1045,7 @@ export function AudioEditor() {
             <div className={styles.transportReadout}>
               <span>Playhead</span>
               <strong>{formatTime(playhead)}</strong>
-              <small>/ {formatTime(getProjectDuration(clips))}</small>
+              <small>/ {formatTime(projectDuration)}</small>
             </div>
 
             <div className={styles.transportRight}>
@@ -1058,17 +1058,41 @@ export function AudioEditor() {
                 <span>Snap</span>
               </label>
 
-              <label className={styles.zoomField}>
+              <div className={styles.zoomField}>
                 <span>Zoom</span>
+                <button
+                  className={styles.zoomButton}
+                  onClick={() => nudgeZoom(-12)}
+                  type="button"
+                >
+                  -
+                </button>
                 <input
-                  max={260}
-                  min={48}
-                  onChange={(event) => setZoom(Number(event.target.value))}
-                  step={1}
+                  max={420}
+                  min={24}
+                  onChange={(event) => setZoomValue(Number(event.target.value))}
+                  step={0.5}
                   type="range"
                   value={zoom}
                 />
-              </label>
+                <button
+                  className={styles.zoomButton}
+                  onClick={() => nudgeZoom(12)}
+                  type="button"
+                >
+                  +
+                </button>
+                <input
+                  className={styles.zoomNumber}
+                  max={420}
+                  min={24}
+                  onChange={(event) => setZoomValue(Number(event.target.value))}
+                  step={0.5}
+                  type="number"
+                  value={Number(zoom.toFixed(1))}
+                />
+                <strong>{formatZoom(zoom)}</strong>
+              </div>
             </div>
           </div>
 
@@ -1112,11 +1136,12 @@ export function AudioEditor() {
 
                 <div
                   className={styles.trackArea}
-                  style={{ minHeight: `${lanes.count * 96}px` }}
+                  style={{ minHeight: `${lanes.count * 108}px` }}
                 >
                   {orderedClips.length ? (
                     orderedClips.map((clip) => {
                       const laneIndex = lanes.map.get(clip.id) ?? 0;
+                      const clipBadges = getClipBadges(clip);
                       const source =
                         clip.kind === "audio"
                           ? sources.find((candidate) => candidate.id === clip.sourceId) ?? null
@@ -1130,8 +1155,8 @@ export function AudioEditor() {
                           key={clip.id}
                           style={{
                             left: `${clip.startTime * zoom}px`,
-                            top: `${laneIndex * 96 + 12}px`,
-                            width: `${Math.max(56, clip.duration * zoom)}px`,
+                            top: `${laneIndex * 108 + 12}px`,
+                            width: `${Math.max(92, clip.duration * zoom)}px`,
                             ["--clip-color" as string]: clip.color,
                           }}
                         >
@@ -1143,6 +1168,14 @@ export function AudioEditor() {
                             <div className={styles.clipTopline}>
                               <strong>{clip.name}</strong>
                               <small>{formatTime(clip.duration)}</small>
+                            </div>
+
+                            <div className={styles.clipMeta}>
+                              {clipBadges.map((badge) => (
+                                <span className={styles.clipBadge} key={`${clip.id}-${badge}`}>
+                                  {badge}
+                                </span>
+                              ))}
                             </div>
 
                             <div className={styles.clipCanvas}>
