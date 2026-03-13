@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MUEdit
 
-## Getting Started
+브라우저에서 바로 쓰는 클립 기반 음악 편집기입니다. 업로드한 오디오를 잘라서 조각 단위로 이동하고, 각 조각마다 볼륨과 페이드 인/아웃을 따로 걸고, 무음 구간까지 넣은 뒤 최종 결과를 무손실 WAV로 내보낼 수 있습니다.
 
-First, run the development server:
+## 핵심 기능
+
+- `audio/*` 파일 불러오기
+- 빈 무음 구간 추가
+- 클립 드래그 이동
+- 양쪽 핸들로 트림
+- 플레이헤드 위치에서 컷
+- 클립별 볼륨 조절
+- 클립별 페이드 인/아웃
+- 줌 조절과 스냅 토글
+- 소스 재배치
+- 32-bit float WAV 내보내기
+
+## 단축키
+
+- `Space`: 재생 / 정지
+- `S`: 현재 플레이헤드 위치에서 컷
+- `Delete`: 선택한 클립 삭제
+- `ArrowLeft / ArrowRight`: 플레이헤드 미세 이동
+- `Shift + ArrowLeft / ArrowRight`: 플레이헤드 크게 이동
+
+## 실행
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 [http://localhost:3000](http://localhost:3000) 을 열면 됩니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 빌드
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run build
+```
 
-## Learn More
+## 배포
 
-To learn more about Next.js, take a look at the following resources:
+Next.js App Router 기반이라 Vercel 배포에 바로 맞습니다.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+vercel
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+권장 사항:
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 최신 Chromium 계열 브라우저에서 테스트
+- 큰 파일 위주라면 데스크톱 환경 사용
+- 최종 배포 전 실제 샘플 음원으로 export 결과 확인
